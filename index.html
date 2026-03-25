@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>openAIR — The Sky Decides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg0:#07111A;--bg1:#0D2235;--mid:#1E5F8A;--surf:#2A8FBF;--mist:#7EC8E3;--dawn:#E0F4FF;--foam:#F3FAFF;--dim:#7FAFC2;--faint:#3A6C85;--wx-bg0:#07111A;--wx-bg1:#0D2235;--wx-accent:#7EC8E3;--wx-accent2:#2A8FBF;--wx-orb1:#7EC8E3;--wx-orb2:#1E5F8A;--wx-orb3:#0D2235;--wx-glow:rgba(126,200,227,0.3);--wx-ring:rgba(126,200,227,0.2)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'DM Sans',system-ui,sans-serif;background:var(--wx-bg0);color:var(--dawn);min-height:100vh;overflow-x:hidden;transition:background 1.5s ease}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.055'/%3E%3C/svg%3E");pointer-events:none;z-index:999;mix-blend-mode:screen}
+.screen{display:none;min-height:100vh;flex-direction:column;animation:rise 0.7s ease forwards}
+.screen.active{display:flex}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+#loading{justify-content:center;align-items:center;text-align:center;background:radial-gradient(ellipse at 40% 30%,#0e2d45 0%,#07111a 60%)}
+.load-orb{width:64px;height:64px;border-radius:50%;margin:0 auto 2rem;background:radial-gradient(ellipse at 38% 32%,var(--mist),var(--mid),var(--bg1));box-shadow:0 0 30px rgba(126,200,227,0.35);animation:breathe 2.5s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(0.88);opacity:0.8}50%{transform:scale(1);opacity:1}}
+.load-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dawn);margin-bottom:0.5rem;letter-spacing:0.1em}
+.load-status{font-size:0.82rem;color:var(--faint);font-style:italic;min-height:1.2rem}
+.load-dots{animation:dots 1.4s steps(4,end) infinite}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}100%{content:''}}
+#onboarding{background:radial-gradient(ellipse at 30% 20%,#0e2d45 0%,#07111a 55%);justify-content:center;align-items:center;padding:2.5rem 1.75rem}
+.ob-inner{max-width:360px;width:100%}
+.logo-orb{width:56px;height:56px;margin:0 auto 1.8rem;border-radius:50%;background:radial-gradient(ellipse at 38% 32%,var(--mist),var(--mid),var(--bg1));box-shadow:0 0 24px rgba(126,200,227,0.3);animation:breathe 4s ease-in-out infinite}
+.brand-name{font-family:'Cormorant Garamond',serif;font-size:2.8rem;font-weight:300;letter-spacing:0.12em;color:var(--dawn);text-align:center;margin-bottom:0.3rem}
+.brand-line{font-size:0.76rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--faint);text-align:center;margin-bottom:2.5rem}
+.philosophy-card{background:rgba(30,95,138,0.12);border:1px solid rgba(126,200,227,0.15);border-radius:16px;padding:1.4rem 1.5rem;margin-bottom:2rem;text-align:center}
+.phil-eyebrow{font-size:0.66rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--mist);margin-bottom:0.6rem}
+.phil-text{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:300;color:var(--dawn);line-height:1.55;font-style:italic}
+.weather-explainer{display:flex;align-items:flex-start;gap:0.9rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:1.1rem 1.2rem;margin-bottom:2rem}
+.wx-icon{font-size:1.6rem;flex-shrink:0;margin-top:0.1rem}
+.wx-explain-title{font-size:0.82rem;color:var(--dawn);font-weight:500;margin-bottom:0.3rem}
+.wx-explain-body{font-size:0.8rem;color:var(--dim);line-height:1.5;font-style:italic}
+.ob-q{font-size:0.84rem;color:var(--dim);text-align:center;margin-bottom:1rem}
+.time-row{display:flex;gap:0.6rem;margin-bottom:2rem}
+.time-pill{flex:1;padding:0.7rem 0.5rem;background:rgba(255,255,255,0.03);border:1px solid rgba(126,200,227,0.12);border-radius:50px;font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--dawn);cursor:pointer;transition:all 0.3s;text-align:center}
+.time-pill:hover,.time-pill.sel{background:rgba(30,95,138,0.2);border-color:var(--mist)}
+.cta-btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--mid),var(--surf));border:none;border-radius:50px;font-family:'Cormorant Garamond',serif;font-size:1.2rem;font-weight:300;color:var(--foam);letter-spacing:0.06em;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 24px rgba(30,95,138,0.4)}
+.cta-btn:hover{transform:translateY(-2px);box-shadow:0 8px 36px rgba(42,143,191,0.5)}
+#home{background:linear-gradient(170deg,var(--wx-bg0) 0%,var(--wx-bg1) 100%);transition:background 1.5s}
+.home-header{padding:3.5rem 1.5rem 1rem;display:flex;justify-content:space-between;align-items:flex-start}
+.greeting h2{font-family:'Cormorant Garamond',serif;font-size:1.85rem;font-weight:300;color:var(--dawn);line-height:1.25}
+.greeting p{font-size:0.84rem;color:var(--faint);font-style:italic;margin-top:0.25rem}
+.streak-chip{display:flex;flex-direction:column;align-items:center;background:rgba(30,95,138,0.15);border:1px solid rgba(126,200,227,0.2);border-radius:14px;padding:0.65rem 1.1rem}
+.streak-num{font-family:'Cormorant Garamond',serif;font-size:1.9rem;color:var(--mist);line-height:1}
+.streak-sub{font-size:0.6rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--faint);margin-top:0.1rem}
+.wx-bar{margin:0 1.5rem 1.2rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:0.75rem 1.1rem;display:flex;align-items:center;gap:0.75rem}
+.wx-bar-icon{font-size:1.4rem}
+.wx-bar-info{flex:1}
+.wx-bar-cond{font-size:0.85rem;color:var(--dawn);font-weight:500}
+.wx-bar-loc{font-size:0.74rem;color:var(--faint);font-style:italic;margin-top:0.1rem}
+.wx-bar-temp{font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--mist)}
+.ring-section{padding:0.2rem 1.5rem 1.2rem;display:flex;flex-direction:column;align-items:center}
+.ring-wrap{position:relative;width:180px;height:180px;margin:0 auto 0.9rem}
+.ring-wrap svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:6}
+.ring-fill{fill:none;stroke:url(#wxGrad);stroke-width:6;stroke-linecap:round;stroke-dasharray:502;stroke-dashoffset:170;transition:stroke-dashoffset 1.5s cubic-bezier(0.4,0,0.2,1);filter:drop-shadow(0 0 5px var(--wx-glow))}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-family:'Cormorant Garamond',serif;font-size:2.6rem;font-weight:300;color:var(--dawn);line-height:1}
+.ring-sub{font-size:0.68rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--faint);margin-top:0.15rem;text-align:center}
+.week-row{display:flex;gap:0.5rem}
+.wdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.58rem;text-transform:uppercase;color:var(--faint);border:1px solid rgba(255,255,255,0.07)}
+.wdot.done{background:rgba(30,95,138,0.25);border-color:var(--mid);color:var(--mist)}
+.wdot.today{background:var(--mid);border-color:var(--mist);color:var(--foam);font-weight:600}
+.practice-section{padding:0 1.5rem 1rem}
+.eyebrow{font-size:0.67rem;letter-spacing:0.2em;text-transform:uppercase;color:var(--faint);margin-bottom:0.75rem}
+.coach-card{background:linear-gradient(135deg,rgba(13,34,53,0.95),rgba(22,56,84,0.85));border:1px solid rgba(126,200,227,0.15);border-radius:20px;padding:1.4rem;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.coach-card::before{content:'';position:absolute;top:-40px;right:-40px;width:130px;height:130px;border-radius:50%;background:radial-gradient(ellipse,var(--wx-glow) 0%,transparent 70%);pointer-events:none;transition:background 1.5s}
+.coach-card:hover{transform:translateY(-3px);border-color:rgba(126,200,227,0.3)}
+.card-eyebrow{font-size:0.64rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--wx-accent);margin-bottom:0.7rem;transition:color 1s}
+.card-title{font-family:'Cormorant Garamond',serif;font-size:1.65rem;font-weight:300;color:var(--dawn);margin-bottom:0.3rem}
+.card-desc{font-size:0.84rem;color:var(--dim);line-height:1.55;margin-bottom:1.1rem;font-style:italic}
+.card-meta{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap}
+.meta-pill{background:rgba(30,95,138,0.2);border:1px solid rgba(126,200,227,0.15);border-radius:50px;padding:0.28rem 0.75rem;font-size:0.76rem;color:var(--mist)}
+.start-btn{margin-left:auto;background:linear-gradient(135deg,var(--mid),var(--surf));border:none;border-radius:50px;padding:0.5rem 1.3rem;font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--foam);cursor:pointer;letter-spacing:0.04em;box-shadow:0 4px 16px rgba(30,95,138,0.4);transition:all 0.3s}
+.start-btn:hover{transform:scale(1.04)}
+.coach-why{margin-top:1rem;padding:0.9rem 1.1rem;background:rgba(255,255,255,0.025);border-left:2px solid var(--wx-ring);border-radius:0 10px 10px 0;transition:border-color 1s}
+.why-label{font-size:0.63rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--faint);margin-bottom:0.25rem}
+.why-text{font-size:0.84rem;color:var(--dim);line-height:1.5;font-style:italic}
+.up-next{padding:0 1.5rem 0.5rem}
+.mini-card{display:flex;align-items:center;gap:0.9rem;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:0.85rem 1.1rem;opacity:0.55}
+.mini-name{font-size:0.88rem;color:var(--dim)}
+.mini-when{font-size:0.73rem;color:var(--faint);font-style:italic}
+.mini-lock{margin-left:auto;font-size:0.78rem;color:var(--faint)}
+.bottom-nav{margin-top:auto;display:flex;justify-content:space-around;padding:1rem 1rem 2.5rem;background:rgba(0,0,0,0.4);border-top:1px solid rgba(255,255,255,0.04);backdrop-filter:blur(10px)}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:0.3rem;cursor:pointer;padding:0.4rem 1rem;border-radius:12px;transition:all 0.3s;border:none;background:none}
+.nav-btn.active{background:rgba(30,95,138,0.15)}
+.nav-icon{font-size:1.1rem}
+.nav-label{font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint)}
+.nav-btn.active .nav-label{color:var(--mist)}
+#session{background:radial-gradient(ellipse at 50% 35%,var(--wx-bg1) 0%,var(--wx-bg0) 50%,#030a10 100%);justify-content:center;align-items:center;padding:2rem 1.5rem;text-align:center;position:relative;transition:background 1.5s}
+.sess-top{position:absolute;top:3rem;left:1.5rem;right:1.5rem;display:flex;justify-content:space-between;align-items:center}
+.back-btn{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--dim);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+.back-btn:hover{background:rgba(255,255,255,0.1);color:var(--dawn)}
+.sess-label{font-family:'Cormorant Garamond',serif;font-size:0.95rem;font-weight:300;color:var(--faint);letter-spacing:0.08em}
+.orb-wrap{position:relative;width:220px;height:220px;margin:0 auto 2.5rem}
+.orb-ambient{position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(ellipse,var(--wx-glow) 0%,transparent 65%);animation:ambientPulse 5s ease-in-out infinite;transition:background 1.5s}
+.orb-body{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(ellipse at 35% 30%,var(--wx-orb1) 0%,var(--wx-orb2) 35%,var(--wx-orb3) 100%);box-shadow:0 0 50px var(--wx-glow),0 0 90px rgba(0,0,0,0.4),inset 0 0 35px rgba(0,0,0,0.3);animation:waterBreathe 5s ease-in-out infinite;transition:background 1.5s,box-shadow 1.5s}
+.orb-shimmer{position:absolute;inset:18px;border-radius:50%;background:radial-gradient(ellipse at 30% 25%,rgba(255,255,255,0.11) 0%,transparent 50%);animation:shimmerShift 5s ease-in-out infinite}
+.orb-r1{position:absolute;inset:8px;border-radius:50%;border:1px solid var(--wx-ring);animation:ringExpand 5s ease-in-out infinite;transition:border-color 1.5s}
+.orb-r2{position:absolute;inset:0;border-radius:50%;border:1px solid rgba(126,200,227,0.06);animation:ringExpand 5s ease-in-out infinite 0.5s}
+@keyframes waterBreathe{0%,100%{transform:scale(0.9);filter:brightness(0.88)}50%{transform:scale(1);filter:brightness(1.1)}}
+@keyframes ambientPulse{0%,100%{transform:scale(0.85);opacity:0.5}50%{transform:scale(1.15);opacity:1}}
+@keyframes shimmerShift{0%,100%{opacity:0.55;transform:rotate(0deg)}50%{opacity:1;transform:rotate(18deg)}}
+@keyframes ringExpand{0%,100%{transform:scale(0.9);opacity:0.35}50%{transform:scale(1.1);opacity:0.8}}
+.breath-word{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--dawn);letter-spacing:0.08em;margin-bottom:0.4rem;min-height:2.2rem}
+.breath-sub{font-size:0.8rem;color:var(--faint);font-style:italic;margin-bottom:2.5rem}
+.timer-big{font-family:'Cormorant Garamond',serif;font-size:3.8rem;font-weight:300;color:var(--dawn);letter-spacing:0.05em;line-height:1;margin-bottom:0.4rem}
+.timer-sub{font-size:0.7rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--faint);margin-bottom:2rem}
+.prog-track{width:180px;height:2px;background:rgba(255,255,255,0.06);border-radius:2px;margin:0 auto 3rem;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--wx-accent2),var(--wx-accent));border-radius:2px;width:0%;transition:width 1s linear;filter:drop-shadow(0 0 4px var(--wx-glow))}
+.controls{display:flex;gap:1.5rem;align-items:center;justify-content:center}
+.ctrl{width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:var(--dim);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.3s}
+.play-btn{width:66px;height:66px;border-radius:50%;background:linear-gradient(135deg,var(--wx-accent2),var(--wx-accent));border:none;color:var(--foam);font-size:1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 24px var(--wx-glow);transition:all 0.3s}
+.play-btn:hover{transform:scale(1.06)}
+#completion{background:radial-gradient(ellipse at 50% 30%,var(--wx-bg1) 0%,#070f18 60%,#030810 100%);justify-content:center;align-items:center;padding:2rem 1.75rem;text-align:center;transition:background 1.5s}
+.comp-inner{max-width:340px;margin:0 auto}
+.comp-orb{width:74px;height:74px;border-radius:50%;margin:0 auto 1.5rem;background:radial-gradient(ellipse at 38% 32%,var(--wx-orb1),var(--wx-orb2));box-shadow:0 0 28px var(--wx-glow);display:flex;align-items:center;justify-content:center;font-size:1.8rem;animation:compOrb 0.8s cubic-bezier(0.34,1.56,0.64,1) forwards;transform:scale(0)}
+@keyframes compOrb{to{transform:scale(1)}}
+.comp-title{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:300;color:var(--dawn);margin-bottom:0.5rem;animation:rise 0.6s 0.3s both}
+.comp-quote{font-size:0.93rem;color:var(--dim);font-style:italic;line-height:1.7;margin-bottom:1.8rem;animation:rise 0.6s 0.5s both}
+.divider{width:36px;height:1px;background:linear-gradient(90deg,transparent,var(--faint),transparent);margin:0 auto 1.4rem}
+.stats-bar{display:flex;gap:1px;background:rgba(255,255,255,0.05);border-radius:14px;overflow:hidden;margin-bottom:1.4rem;animation:rise 0.6s 0.7s both}
+.stat{flex:1;background:rgba(255,255,255,0.02);padding:0.9rem 0.4rem}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:1.85rem;color:var(--mist);line-height:1}
+.stat-label{font-size:0.64rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);margin-top:0.25rem}
+.milestone{background:rgba(30,95,138,0.12);border:1px solid rgba(126,200,227,0.2);border-radius:14px;padding:0.95rem 1.2rem;margin-bottom:1.4rem;animation:rise 0.6s 0.9s both}
+.ms-top{font-size:0.65rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--mist);margin-bottom:0.3rem}
+.ms-text{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--dawn);line-height:1.4}
+.coach-debrief{border-left:2px solid rgba(126,200,227,0.25);padding:0.6rem 1rem;margin-bottom:1.8rem;text-align:left;animation:rise 0.6s 1s both}
+.debrief-label{font-size:0.63rem;letter-spacing:0.15em;text-transform:uppercase;color:var(--faint);margin-bottom:0.25rem}
+.debrief-text{font-size:0.88rem;color:var(--dim);font-style:italic;line-height:1.5}
+.home-btn{width:100%;padding:1rem;background:rgba(255,255,255,0.04);border:1px solid rgba(126,200,227,0.15);border-radius:50px;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--dawn);cursor:pointer;transition:all 0.3s;letter-spacing:0.05em;animation:rise 0.6s 1.1s both}
+.home-btn:hover{background:rgba(30,95,138,0.15);border-color:rgba(126,200,227,0.3)}
+.particles{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.particle{position:absolute;border-radius:50%;animation:pFloat linear infinite}
+@keyframes pFloat{0%{transform:translateY(100vh) translateX(0);opacity:0}8%{opacity:1}92%{opacity:0.35}100%{transform:translateY(-80px) translateX(15px);opacity:0}}
+</style>
+</head>
+<body>
+<div class="particles" id="particles"></div>
+
+<div class="screen active" id="loading">
+  <div class="load-orb"></div>
+  <div class="load-title">open<span style="color:var(--mist);letter-spacing:0.18em">AIR</span></div>
+  <div class="load-status" id="load-status">Reading the sky<span class="load-dots">...</span></div>
+</div>
+
+<div class="screen" id="onboarding">
+  <div class="ob-inner" style="margin:auto;">
+    <div class="logo-orb"></div>
+    <h1 class="brand-name">open<span style="color:var(--mist);letter-spacing:0.18em">AIR</span></h1>
+    <p class="brand-line">the sky decides</p>
+    <div class="philosophy-card">
+      <div class="phil-eyebrow">A different kind of app</div>
+      <p class="phil-text">"You won't choose a session.<br>The weather outside will."</p>
+    </div>
+    <div class="weather-explainer">
+      <div class="wx-icon">🌤</div>
+      <div>
+        <div class="wx-explain-title">Why weather?</div>
+        <div class="wx-explain-body">You already orient your day by what's outside. Rainy morning — slower, softer. Clear sky — expansive, open. Your practice follows the same logic. The outside becomes the inside.</div>
+      </div>
+    </div>
+    <p class="ob-q">How long can you give each day?</p>
+    <div class="time-row">
+      <div class="time-pill" onclick="selTime(this)">5 min</div>
+      <div class="time-pill sel" onclick="selTime(this)">10 min</div>
+      <div class="time-pill" onclick="selTime(this)">20 min</div>
+    </div>
+    <button class="cta-btn" onclick="showScreen('home')">Let the sky decide &#8594;</button>
+  </div>
+</div>
+
+<div class="screen" id="home">
+  <div class="home-header">
+    <div class="greeting">
+      <h2 id="greeting-text">Good morning,<br>the water's still.</h2>
+      <p>Day 8 of your practice.</p>
+    </div>
+    <div class="streak-chip">
+      <div class="streak-num">&#128167;8</div>
+      <div class="streak-sub">days deep</div>
+    </div>
+  </div>
+  <div class="wx-bar">
+    <div class="wx-bar-icon" id="wx-bar-icon">&#8987;</div>
+    <div class="wx-bar-info">
+      <div class="wx-bar-cond" id="wx-bar-cond">Finding your sky...</div>
+      <div class="wx-bar-loc" id="wx-bar-loc">Locating...</div>
+    </div>
+    <div class="wx-bar-temp" id="wx-bar-temp">--&deg;</div>
+  </div>
+  <div class="ring-section">
+    <div class="ring-wrap">
+      <svg viewBox="0 0 180 180">
+        <defs>
+          <linearGradient id="wxGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#1E5F8A" id="grad-stop1"/>
+            <stop offset="100%" stop-color="#7EC8E3" id="grad-stop2"/>
+          </linearGradient>
+        </defs>
+        <circle class="ring-track" cx="90" cy="90" r="80"/>
+        <circle class="ring-fill" cx="90" cy="90" r="80"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-num">8</div>
+        <div class="ring-sub">days toward<br>30</div>
+      </div>
+    </div>
+    <div class="week-row">
+      <div class="wdot done">M</div><div class="wdot done">T</div><div class="wdot done">W</div>
+      <div class="wdot done">T</div><div class="wdot today">F</div><div class="wdot">S</div><div class="wdot">S</div>
+    </div>
+  </div>
+  <div class="practice-section">
+    <div class="eyebrow">Today's practice &#8212; chosen by the sky</div>
+    <div class="coach-card" id="practice-card" onclick="startSession()">
+      <div class="card-eyebrow" id="card-eyebrow">&#10022; Day 8 &middot; Loading...</div>
+      <div class="card-title" id="card-title">...</div>
+      <div class="card-desc" id="card-desc">Reading today's weather...</div>
+      <div class="card-meta">
+        <span class="meta-pill" id="meta-dur">10 min</span>
+        <span class="meta-pill" id="meta-type">Breath-led</span>
+        <button class="start-btn">Begin &#8594;</button>
+      </div>
+      <div class="coach-why">
+        <div class="why-label">Why today?</div>
+        <div class="why-text" id="why-text">The sky is deciding...</div>
+      </div>
+    </div>
+  </div>
+  <div class="up-next">
+    <div class="eyebrow" style="margin-bottom:0.6rem;">Tomorrow</div>
+    <div class="mini-card">
+      <div style="font-size:1.1rem;">&#127748;</div>
+      <div>
+        <div class="mini-name">Tomorrow's practice depends on tomorrow's sky</div>
+        <div class="mini-when">Check back in the morning</div>
+      </div>
+      <div class="mini-lock">&#8734;</div>
+    </div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-btn active"><span class="nav-icon">&#128167;</span><span class="nav-label">Practice</span></button>
+    <button class="nav-btn"><span class="nav-icon">&#9711;</span><span class="nav-label">Progress</span></button>
+    <button class="nav-btn"><span class="nav-icon">&#10022;</span><span class="nav-label">Journey</span></button>
+    <button class="nav-btn"><span class="nav-icon">&#9675;</span><span class="nav-label">Profile</span></button>
+  </nav>
+</div>
+
+<div class="screen" id="session" style="position:relative;">
+  <div class="sess-top">
+    <button class="back-btn" onclick="showScreen('home')">&#8592;</button>
+    <span class="sess-label" id="sess-label">Morning Practice</span>
+    <div style="width:40px;"></div>
+  </div>
+  <div class="orb-wrap">
+    <div class="orb-ambient"></div>
+    <div class="orb-r2"></div>
+    <div class="orb-r1"></div>
+    <div class="orb-body"></div>
+    <div class="orb-shimmer"></div>
+  </div>
+  <div class="breath-word" id="breath-word">Breathe in...</div>
+  <div class="breath-sub" id="breath-sub">follow the sky</div>
+  <div class="timer-big" id="timer-big">10:00</div>
+  <div class="timer-sub">remaining</div>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+  <div class="controls">
+    <button class="ctrl">&#8722;1</button>
+    <button class="play-btn" id="play-btn" onclick="togglePlay()">&#9654;</button>
+    <button class="ctrl">+1</button>
+  </div>
+</div>
+
+<div class="screen" id="completion">
+  <div class="comp-inner">
+    <div class="comp-orb" id="comp-orb">&#128167;</div>
+    <h2 class="comp-title">You showed up.</h2>
+    <p class="comp-quote" id="comp-quote">"Still water runs deep.<br>Eight days &#8212; and counting."</p>
+    <div class="divider"></div>
+    <div class="stats-bar">
+      <div class="stat"><div class="stat-val" id="comp-min">10</div><div class="stat-label">Minutes</div></div>
+      <div class="stat"><div class="stat-val" id="comp-wx-icon">&#128167;</div><div class="stat-label">Weather</div></div>
+      <div class="stat"><div class="stat-val">9</div><div class="stat-label">Tomorrow</div></div>
+    </div>
+    <div class="milestone">
+      <div class="ms-top">&#10022; Milestone reached</div>
+      <div class="ms-text">8 days straight. Your deepest streak yet. The habit is forming.</div>
+    </div>
+    <div class="coach-debrief">
+      <div class="debrief-label">From your coach</div>
+      <div class="debrief-text" id="comp-debrief">"Good work. The sky chose well today. Come back tomorrow &#8212; it'll have something new for you."</div>
+    </div>
+    <button class="home-btn" onclick="showScreen('home')">Return to surface &#8594;</button>
+  </div>
+</div>
+
+<script>
+const THEMES = {
+  clear:{codes:[0],icon:'☀️',label:'Clear sky',name:'Open Sky',desc:'A vast, open awareness practice. Let your mind expand like the horizon — nowhere to go, nothing to hold.',type:'Open awareness',why:'"Clear skies invite expansive thinking. Today we open up — wide attention, no anchor, just the space of your own awareness."',breathTexts:['Expand...','Hold the sky...','Release...','Be open...'],breathSubs:['let your mind go wide','hold all of it','nothing to grasp','you are the sky'],compQuote:'"A clear sky doesn\'t try to be clear. It just is."',debrief:'"The open sky asked for openness — and you gave it. Tomorrow the weather will have something different."',bg0:'#0A1520',bg1:'#0F2535',orb1:'#FFD580',orb2:'#C4954A',orb3:'#3D2010',accent:'#FFD580',accent2:'#C4954A',glow:'rgba(255,213,128,0.28)',ring:'rgba(255,213,128,0.18)',g1:'#C4954A',g2:'#FFD580'},
+  partly:{codes:[1,2],icon:'🌤',label:'Partly cloudy',name:'Drifting Light',desc:'A practice of noticing — following patches of thought like clouds crossing sky. Some stay, some pass.',type:'Mindful observation',why:'"Scattered clouds teach scattered thoughts. Today we practice watching without chasing — let each thought drift through."',breathTexts:['Breathe in...','Watch softly...','Breathe out...','Let it drift...'],breathSubs:['clouds on the horizon','without holding','let the thought pass','like you always could'],compQuote:'"Clouds don\'t apologize for casting shadows. Neither should you."',debrief:'"You practiced noticing without chasing. That\'s one of the hardest things. The sky will tell us what\'s next."',bg0:'#0D1A28',bg1:'#142535',orb1:'#B8DFF0',orb2:'#4A90A4',orb3:'#0D2235',accent:'#B8DFF0',accent2:'#4A90A4',glow:'rgba(184,223,240,0.25)',ring:'rgba(184,223,240,0.15)',g1:'#4A90A4',g2:'#B8DFF0'},
+  overcast:{codes:[3],icon:'☁️',label:'Overcast',name:'Still Grey',desc:'A grounding, body-led practice. Grey skies invite you inward — sensation, breath, the weight of stillness.',type:'Body scan',why:'"Overcast days flatten the sky and pull us inward. Today we stay close to the body — small, warm, present."',breathTexts:['Breathe in...','Hold gently...','Breathe out...','Rest here...'],breathSubs:['feel the ground beneath','warm and heavy','let the grey hold you','you don\'t need to move'],compQuote:'"The grey sky doesn\'t fail to be sky. It\'s just sky, differently."',debrief:'"Overcast practices are the deep ones — you stayed close to the ground. Good work."',bg0:'#10151A',bg1:'#1A2028',orb1:'#9DB5C0',orb2:'#4A6070',orb3:'#1A2530',accent:'#9DB5C0',accent2:'#4A6070',glow:'rgba(157,181,192,0.22)',ring:'rgba(157,181,192,0.14)',g1:'#4A6070',g2:'#9DB5C0'},
+  fog:{codes:[45,48],icon:'🌫',label:'Foggy',name:'Into the Mist',desc:'A practice of releasing the need to see clearly. Sit in the not-knowing. The path is still there.',type:'Acceptance practice',why:'"Fog is the sky\'s reminder that clarity isn\'t always ours to have. Today we practice sitting with the uncertain."',breathTexts:['Breathe in...','Hold the unknown...','Breathe out...','Let it be unclear...'],breathSubs:['the mist holds you','not knowing is okay','release the need to see','you are still here'],compQuote:'"The fog doesn\'t ask you to see through it. It asks you to trust the ground."',debrief:'"You sat with uncertainty today. That\'s the hardest practice. When the fog lifts, you\'ll see differently."',bg0:'#111518',bg1:'#1C2228',orb1:'#C8D8DD',orb2:'#6A8490',orb3:'#1C2830',accent:'#C8D8DD',accent2:'#6A8490',glow:'rgba(200,216,221,0.2)',ring:'rgba(200,216,221,0.12)',g1:'#6A8490',g2:'#C8D8DD'},
+  rain:{codes:[51,53,61,63,80,81],icon:'🌧',label:'Rain',name:'Rain Practice',desc:'Follow the sound. A listening meditation — let rain become the guide. Nothing to do but hear.',type:'Sound meditation',why:'"Rain gives you permission to slow down. Today we use sound as the anchor — rain is the teacher."',breathTexts:['Listen...','Hold the sound...','Let go...','Rain continues...'],breathSubs:['let rain fill the room','every drop distinct','nothing to add','it doesn\'t need you to listen'],compQuote:'"Rain doesn\'t wait for permission. It just falls."',debrief:'"You let the rain lead today — a rarer skill than it sounds. Tomorrow the sky will be different."',bg0:'#080F18',bg1:'#0F1E30',orb1:'#7EC8E3',orb2:'#1E5F8A',orb3:'#060F18',accent:'#7EC8E3',accent2:'#1E5F8A',glow:'rgba(126,200,227,0.3)',ring:'rgba(126,200,227,0.18)',g1:'#1E5F8A',g2:'#7EC8E3'},
+  storm:{codes:[55,65,82,95,96,99],icon:'⛈',label:'Thunderstorm',name:'The Storm Sits',desc:'A practice for intensity. Let the storm be outside. Practice being the eye — still, while everything moves.',type:'Centring practice',why:'"Storms test stillness. Today\'s practice is simple: stay. The noise outside is not the noise inside — unless you let it be."',breathTexts:['Breathe in...','Be the eye...','Breathe out...','The storm passes...'],breathSubs:['you are not the storm','still at the centre','everything moves but you','this too will clear'],compQuote:'"The eye of the storm is the only calm the storm contains. You found it."',debrief:'"You practiced stillness during intensity. That\'s the whole game. The storm will pass — your stillness stays."',bg0:'#07090F',bg1:'#0E1520',orb1:'#8899CC',orb2:'#2A3568',orb3:'#07090F',accent:'#8899CC',accent2:'#2A3568',glow:'rgba(136,153,204,0.28)',ring:'rgba(136,153,204,0.16)',g1:'#2A3568',g2:'#8899CC'},
+  snow:{codes:[71,73,75,77,85,86],icon:'🌨',label:'Snow',name:'The Quiet Fall',desc:'Snow silences the world. A silence practice — no guidance, just breath and the particular quiet that only snow makes.',type:'Silence practice',why:'"Snow absorbs sound. Today we borrow that — a practice of deliberate quiet, matching what the world is doing outside."',breathTexts:['Breathe in...','Let it be quiet...','Breathe out...','The snow holds...'],breathSubs:['like the first snow','the world is muffled','let silence widen','nothing needs saying'],compQuote:'"Snow doesn\'t fall to impress. It falls, and everything quiets."',debrief:'"You practiced silence today. The snow asked for it — you gave it. Rare and right."',bg0:'#0F1520',bg1:'#182030',orb1:'#E0EFFF',orb2:'#8AAAC8',orb3:'#182030',accent:'#E0EFFF',accent2:'#8AAAC8',glow:'rgba(224,239,255,0.22)',ring:'rgba(224,239,255,0.14)',g1:'#8AAAC8',g2:'#E0EFFF'},
+};
+
+const DEFAULT = THEMES.rain;
+let theme = DEFAULT, sessionMins = 10, sessionDur = 600, secsLeft = 600;
+let interval = null, playing = false, bStep = 0, bTimer = 0;
+const bDurs = [4,2,6,2];
+
+function getTheme(code) {
+  for (const k in THEMES) if (THEMES[k].codes.includes(code)) return THEMES[k];
+  return DEFAULT;
+}
+
+function applyTheme(t, city, tempF) {
+  const r = document.documentElement;
+  r.style.setProperty('--wx-bg0', t.bg0);
+  r.style.setProperty('--wx-bg1', t.bg1);
+  r.style.setProperty('--wx-accent', t.accent);
+  r.style.setProperty('--wx-accent2', t.accent2);
+  r.style.setProperty('--wx-orb1', t.orb1);
+  r.style.setProperty('--wx-orb2', t.orb2);
+  r.style.setProperty('--wx-orb3', t.orb3);
+  r.style.setProperty('--wx-glow', t.glow);
+  r.style.setProperty('--wx-ring', t.ring);
+  const s1 = document.getElementById('grad-stop1');
+  const s2 = document.getElementById('grad-stop2');
+  if(s1) s1.setAttribute('stop-color', t.g1);
+  if(s2) s2.setAttribute('stop-color', t.g2);
+  document.getElementById('wx-bar-icon').textContent = t.icon;
+  document.getElementById('wx-bar-cond').textContent = t.label;
+  document.getElementById('wx-bar-loc').textContent = city;
+  document.getElementById('wx-bar-temp').textContent = tempF !== '--' ? tempF+'°F' : '--°';
+  document.getElementById('card-eyebrow').textContent = '✦ Day 8 · '+t.label+' · '+t.type;
+  document.getElementById('card-title').textContent = t.name;
+  document.getElementById('card-desc').textContent = t.desc;
+  document.getElementById('meta-type').textContent = t.type;
+  document.getElementById('why-text').textContent = t.why;
+  document.getElementById('sess-label').textContent = t.name;
+  document.getElementById('comp-orb').textContent = t.icon;
+  document.getElementById('comp-quote').textContent = t.compQuote;
+  document.getElementById('comp-debrief').textContent = t.debrief;
+  document.getElementById('comp-wx-icon').textContent = t.icon;
+  const hr = new Date().getHours();
+  const g = hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening';
+  const greets = {clear:g+',\nthe sky is open.',partly:g+',\nclouds are drifting.',overcast:g+',\nthe grey holds.',fog:g+',\nthe mist is here.',rain:g+',\nthe rain has arrived.',storm:g+',\nthe storm is outside.',snow:g+',\nthe snow is falling.'};
+  const k = Object.keys(THEMES).find(k => THEMES[k]===t)||'rain';
+  const gt = greets[k]||g+',\nthe sky has decided.';
+  document.getElementById('greeting-text').innerHTML = gt.replace('\n','<br>');
+  document.body.style.background = t.bg0;
+}
+
+function spawnParticles() {
+  const pc = document.getElementById('particles');
+  pc.innerHTML = '';
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const sz=1+Math.random()*2.5;
+    p.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;animation-duration:${9+Math.random()*14}s;animation-delay:${Math.random()*12}s;opacity:${0.12+Math.random()*0.25};background:${theme.accent};`;
+    pc.appendChild(p);
+  }
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='home') spawnParticles();
+  if(id!=='session') stopTimer();
+}
+
+function selTime(el) {
+  document.querySelectorAll('.time-pill').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+  sessionMins = parseInt(el.textContent);
+  document.getElementById('meta-dur').textContent = el.textContent;
+  document.getElementById('comp-min').textContent = sessionMins;
+}
+
+function startSession() {
+  sessionDur=sessionMins*60; secsLeft=sessionDur; playing=false; bStep=0; bTimer=0;
+  document.getElementById('timer-big').textContent=fmt(secsLeft);
+  document.getElementById('prog-fill').style.width='0%';
+  document.getElementById('play-btn').textContent='▶';
+  setBreath(0);
+  showScreen('session');
+}
+
+function fmt(s){return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;}
+
+function setBreath(step) {
+  document.getElementById('breath-word').textContent = theme.breathTexts[step];
+  document.getElementById('breath-sub').textContent = theme.breathSubs[step];
+}
+
+function togglePlay() {
+  playing=!playing;
+  document.getElementById('play-btn').textContent=playing?'⏸':'▶';
+  if(playing) interval=setInterval(tick,1000); else stopTimer();
+}
+
+function stopTimer(){clearInterval(interval);playing=false;}
+
+function tick() {
+  secsLeft--;
+  document.getElementById('timer-big').textContent=fmt(Math.max(0,secsLeft));
+  document.getElementById('prog-fill').style.width=((sessionDur-secsLeft)/sessionDur*100)+'%';
+  bTimer++;
+  if(bTimer>=bDurs[bStep]){bTimer=0;bStep=(bStep+1)%4;setBreath(bStep);}
+  if(secsLeft<=0){clearInterval(interval);setTimeout(()=>showScreen('completion'),500);}
+}
+
+function setStatus(txt){document.getElementById('load-status').innerHTML=txt+'<span class="load-dots">...</span>';}
+
+async function boot() {
+  setStatus('Finding your location');
+  let lat='40.7128', lon='-74.0060', city='New York';
+  try {
+    const pos = await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000}));
+    lat=pos.coords.latitude.toFixed(4); lon=pos.coords.longitude.toFixed(4);
+    setStatus('Reading the sky above you');
+    try {
+      const gr = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json`,{headers:{'Accept-Language':'en'}});
+      const gd = await gr.json();
+      city = gd.address?.city||gd.address?.town||gd.address?.village||gd.address?.county||'your area';
+    } catch(_){}
+  } catch(_){ setStatus('Using New York as default'); }
+
+  try {
+    setStatus('Translating weather to practice');
+    const wr = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&temperature_unit=fahrenheit&timezone=auto`);
+    const wd = await wr.json();
+    const code = wd.current.weathercode;
+    const tempF = Math.round(wd.current.temperature_2m);
+    theme = getTheme(code);
+    applyTheme(theme, city, tempF);
+  } catch(_) {
+    theme = DEFAULT;
+    applyTheme(theme, city, '--');
+  }
+
+  await new Promise(r=>setTimeout(r,700));
+  showScreen('onboarding');
+}
+
+window.addEventListener('load', boot);
+</script>
+</body>
+</html>
